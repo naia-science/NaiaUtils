@@ -68,7 +68,7 @@ def download_gcp(bucket_name, project, jsonAuthPath, downloadDirPath):
         os.makedirs(downloadDirPath)
 
     # Créer une instance de client Storage à partir du fichier JSON contenant les clés d'identification de service
-    storage_client = storage.Client.from_service_account_json("vipare-dev-d71306af56fc.json", project="vipare-dev")
+    storage_client = storage.Client.from_service_account_json(jsonAuthPath, project=project)
 
     # Obtenir le bucket
     bucket = storage_client.get_bucket(bucket_name)
@@ -83,10 +83,12 @@ def download_gcp(bucket_name, project, jsonAuthPath, downloadDirPath):
         blob_name = blob.name
     
         # Téléchargez le blob dans le dossier de téléchargement avec le même nom
+
         download_path = os.path.join(downloadDirPath, blob_name)
+        #créer le dossier si il n'existe pas
+        os.makedirs(os.path.dirname(download_path), exist_ok=True)
         blob.download_to_filename(download_path)
     
-        print("Fichier '{}' téléchargé avec succès.".format(blob_name))
 
     print("Tous les fichiers ont été téléchargés avec succès.")
 
@@ -97,11 +99,11 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Upload files to GCP")
 
-    parser.add_argument("bucket_name", type=str, help="Name of the bucket")
-    parser.add_argument("project", type=str, help="Name of the project")
-    parser.add_argument("jsonAuthPath", type=str, help="Path to the json authentication file")
-    parser.add_argument("downloadDirPath", type=str, help="Path to the directory to upload or download")
-    parser.add_argument("upload", type=bool, help="True to upload, False to download")
+    parser.add_argument("--bucket_name", type=str, help="Name of the bucket")
+    parser.add_argument("--project", type=str, help="Name of the project")
+    parser.add_argument("--jsonAuthPath", type=str, help="Path to the json authentication file")
+    parser.add_argument("--downloadDirPath", type=str, help="Path to the directory to upload or download")
+    parser.add_argument("--upload", type=bool, help="True to upload, False to download")
 
     args = parser.parse_args()
 
@@ -110,9 +112,14 @@ if __name__ == "__main__":
         print("Please privide all required arguments. Run with -h for help.")
         exit(1)
 
+    # change upload arg to a boolean
+    args.upload = True if args.upload == "True" else False    
+
     if args.upload:
+        print("Uploading files to GCP...")
         upload_dirs_to_gcp(args.bucket_name, args.project, args.jsonAuthPath, args.downloadDirPath)
 
     else:
+        print("Downloading files from GCP...")
         download_gcp(args.bucket_name, args.project, args.jsonAuthPath, args.downloadDirPath)
     
